@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Wheel of Macgowans — Controller</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: #0a0020;
+      color: #fff;
+      font-family: 'Georgia', serif;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── JOIN SCREEN ──────────────────── */
+    #join-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 30px 20px;
+      gap: 20px;
+      width: 100%;
+    }
+    #join-title {
+      font-size: 1.8rem;
+      color: #FFD700;
+      text-shadow: 0 0 16px #FFD700;
+      text-align: center;
+      letter-spacing: 3px;
+    }
+    #join-subtitle {
+      color: #aabbff;
+      font-size: 1rem;
+      text-align: center;
+    }
+    #name-input {
+      font-size: 1.3rem;
+      padding: 14px 20px;
+      border-radius: 10px;
+      border: 2px solid #446;
+      background: #101035;
+      color: #fff;
+      width: 80%;
+      text-align: center;
+      font-family: 'Georgia', serif;
+      outline: none;
+    }
+    #name-input:focus { border-color: #FFD700; }
+    #join-btn {
+      font-size: 1.3rem;
+      padding: 14px 40px;
+      background: #FFD700;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+      font-family: 'Georgia', serif;
+      cursor: pointer;
+      width: 80%;
+    }
+    #join-error {
+      color: #ff6666;
+      font-size: 0.95rem;
+      text-align: center;
+      min-height: 24px;
+    }
+
+    /* ── WAITING SCREEN ───────────────── */
+    #waiting-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 20px;
+      padding: 20px;
+    }
+    #waiting-name {
+      font-size: 1.6rem;
+      color: #FFD700;
+      text-align: center;
+    }
+    #waiting-msg {
+      color: #aabbff;
+      font-size: 1rem;
+      text-align: center;
+    }
+    .dot-anim::after {
+      content: '...';
+      animation: dots 1.5s steps(3, end) infinite;
+    }
+    @keyframes dots {
+      0%,100% { content: '.'; }
+      33%      { content: '..'; }
+      66%      { content: '...'; }
+    }
+
+    /* ── CONTROLLER SCREEN ────────────── */
+    #controller-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      padding: 10px 8px 20px;
+      gap: 10px;
+    }
+
+    /* Status bar */
+    #ctrl-status {
+      font-size: 0.85rem;
+      color: #aabbff;
+      text-align: center;
+      background: rgba(0,0,40,0.7);
+      border-radius: 6px;
+      padding: 5px 14px;
+      width: 100%;
+    }
+    #ctrl-player-name {
+      font-size: 1.1rem;
+      color: #FFD700;
+      font-weight: bold;
+    }
+
+    /* Turn indicator */
+    #turn-banner {
+      width: 100%;
+      text-align: center;
+      font-size: 1.1rem;
+      padding: 8px;
+      border-radius: 8px;
+      font-weight: bold;
+      background: rgba(0,0,40,0.8);
+      border: 1px solid #334;
+      transition: all 0.3s;
+    }
+    #turn-banner.your-turn {
+      background: rgba(0,50,0,0.9);
+      border-color: #44ff88;
+      color: #44ff88;
+      box-shadow: 0 0 14px #44ff8866;
+    }
+    #turn-banner.not-your-turn {
+      color: #556;
+      border-color: #222;
+    }
+
+    /* Spin button */
+    #spin-btn {
+      width: 90%;
+      padding: 22px;
+      font-size: 1.6rem;
+      font-weight: bold;
+      font-family: 'Georgia', serif;
+      border-radius: 14px;
+      border: none;
+      background: linear-gradient(135deg, #FFD700, #ff8c00);
+      color: #000;
+      cursor: pointer;
+      box-shadow: 0 4px 18px #FFD70066;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    #spin-btn:active { transform: scale(0.97); }
+    #spin-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+    /* Action buttons */
+    .action-row {
+      display: flex;
+      gap: 10px;
+      width: 90%;
+    }
+    .action-btn {
+      flex: 1;
+      padding: 14px 8px;
+      font-size: 1rem;
+      font-family: 'Georgia', serif;
+      font-weight: bold;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .action-btn:active { transform: scale(0.96); }
+    .action-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+    #buy-vowel-btn {
+      background: linear-gradient(135deg, #9b59b6, #6c3483);
+      color: #fff;
+    }
+    #solve-btn {
+      background: linear-gradient(135deg, #27ae60, #1a6b3c);
+      color: #fff;
+    }
+
+    /* Section label */
+    .section-label {
+      width: 90%;
+      font-size: 0.8rem;
+      color: #556;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-align: left;
+      margin-bottom: -4px;
+    }
+
+    /* Letter grid */
+    #letter-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      width: 95%;
+    }
+    .letter-btn {
+      aspect-ratio: 1;
+      font-size: 1.2rem;
+      font-weight: bold;
+      font-family: 'Georgia', serif;
+      border-radius: 8px;
+      border: 2px solid #334;
+      background: #101035;
+      color: #fff;
+      cursor: pointer;
+      transition: opacity 0.2s, background 0.2s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .letter-btn:active { transform: scale(0.92); }
+    .letter-btn:disabled {
+      opacity: 0.15;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .letter-btn.vowel {
+      border-color: #9b59b6;
+      color: #d7a8ff;
+    }
+    .letter-btn.selectable {
+      border-color: #FFD700;
+      background: #1a1040;
+    }
+    .letter-btn.vowel-selectable {
+      border-color: #9b59b6;
+      background: #1a0030;
+    }
+
+    /* Solve panel */
+    #solve-panel {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 90%;
+      background: rgba(0,40,0,0.5);
+      border: 2px solid #27ae60;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    #solve-panel.visible { display: flex; }
+    #solve-input {
+      width: 100%;
+      font-size: 1.1rem;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 2px solid #27ae60;
+      background: #101025;
+      color: #fff;
+      font-family: 'Georgia', serif;
+      text-transform: uppercase;
+    }
+    #solve-input:focus { outline: none; border-color: #44ff88; }
+    .solve-row { display: flex; gap: 10px; width: 100%; }
+    #solve-submit-btn {
+      flex: 2;
+      padding: 12px;
+      background: #27ae60;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      font-family: 'Georgia', serif;
+      cursor: pointer;
+    }
+    #solve-cancel-btn {
+      flex: 1;
+      padding: 12px;
+      background: #444;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    /* Vowel panel */
+    #vowel-panel {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 90%;
+      background: rgba(40,0,60,0.6);
+      border: 2px solid #9b59b6;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    #vowel-panel.visible { display: flex; }
+    #vowel-panel-label {
+      color: #d7a8ff;
+      font-size: 0.95rem;
+    }
+    #vowel-grid {
+      display: flex;
+      gap: 10px;
+    }
+    .vowel-pick-btn {
+      width: 54px;
+      height: 54px;
+      font-size: 1.4rem;
+      font-weight: bold;
+      border-radius: 10px;
+      border: 2px solid #9b59b6;
+      background: #200040;
+      color: #d7a8ff;
+      cursor: pointer;
+      font-family: 'Georgia', serif;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .vowel-pick-btn:active { transform: scale(0.92); }
+    .vowel-pick-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+
+    /* Spin result flash */
+    #spin-result {
+      font-size: 1.2rem;
+      text-align: center;
+      min-height: 32px;
+      color: #44ff88;
+      font-weight: bold;
+    }
+    #spin-result.bankrupt { color: #ff4444; }
+    #spin-result.lose-turn { color: #ff9900; }
+
+    /* Next round button */
+    #next-round-btn {
+      font-size: 1.4rem;
+      padding: 18px 48px;
+      background: linear-gradient(135deg, #FFD700, #ff8c00);
+      color: #000;
+      border: none;
+      border-radius: 12px;
+      font-weight: bold;
+      font-family: 'Georgia', serif;
+      cursor: pointer;
+      box-shadow: 0 4px 18px #FFD70066;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    #next-round-btn:active { transform: scale(0.97); }
+
+    /* Scoreboard mini */
+    #mini-scores {
+      width: 95%;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .mini-score {
+      flex: 1;
+      background: rgba(0,0,40,0.7);
+      border: 1px solid #224;
+      border-radius: 6px;
+      padding: 5px 8px;
+      text-align: center;
+      font-size: 0.78rem;
+      min-width: 80px;
+      transition: border-color 0.3s;
+    }
+    .mini-score.active { border-color: #FFD700; }
+    .mini-score-name { color: #aaa; }
+    .mini-score-val { color: #FFD700; font-weight: bold; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+<!-- ── JOIN SCREEN ──────────────────────────────────────────────── -->
+<div id="join-screen">
+  <div id="join-title">🎡 Wheel of Macgowans</div>
+  <div id="join-subtitle">Enter your name to join the game</div>
+  <input id="name-input" type="text" maxlength="20"
+         placeholder="Your name" autocomplete="off"
+         autocorrect="off" autocapitalize="words">
+  <button id="join-btn">Join Game</button>
+  <div id="join-error"></div>
+</div>
+
+<!-- ── WAITING SCREEN ──────────────────────────────────────────── -->
+<div id="waiting-screen">
+  <div id="waiting-name">You're in!</div>
+  <div id="waiting-msg">Waiting for other players<span class="dot-anim"></span></div>
+  <button id="next-round-btn" style="display:none;">Next Round ▶</button>
+</div>
+
+<!-- ── CONTROLLER SCREEN ────────────────────────────────────────── -->
+<div id="controller-screen">
+
+  <div id="ctrl-status">
+    <div id="ctrl-player-name">Player</div>
+    <div id="ctrl-round">Round 1 of 5</div>
+  </div>
+
+  <div id="turn-banner" class="not-your-turn">Waiting for your turn...</div>
+
+  <div id="spin-result"></div>
+
+  <button id="spin-btn" disabled>🎡 SPIN</button>
+
+  <div class="action-row">
+    <button class="action-btn" id="buy-vowel-btn" disabled>
+      Buy Vowel ($250)
+    </button>
+    <button class="action-btn" id="solve-btn" disabled>
+      Solve Puzzle
+    </button>
+  </div>
+
+  <!-- Vowel selection panel -->
+  <div id="vowel-panel">
+    <div id="vowel-panel-label">Pick a vowel:</div>
+    <div id="vowel-grid">
+      <button class="vowel-pick-btn" data-letter="A">A</button>
+      <button class="vowel-pick-btn" data-letter="E">E</button>
+      <button class="vowel-pick-btn" data-letter="I">I</button>
+      <button class="vowel-pick-btn" data-letter="O">O</button>
+      <button class="vowel-pick-btn" data-letter="U">U</button>
+    </div>
+  </div>
+
+  <!-- Solve panel -->
+  <div id="solve-panel">
+    <div style="color:#44ff88;font-size:0.9rem;">Type your answer:</div>
+    <input id="solve-input" type="text" placeholder="THE ANSWER IS..." autocomplete="off">
+    <div class="solve-row">
+      <button id="solve-submit-btn">✔ Submit</button>
+      <button id="solve-cancel-btn">✖ Cancel</button>
+    </div>
+  </div>
+
+  <div class="section-label">Letters</div>
+  <div id="letter-grid"></div>
+
+  <div class="section-label" style="margin-top:6px;">Scores</div>
+  <div id="mini-scores"></div>
+
+</div>
+
+<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+<script src="/static/controller.js"></script>
+</body>
+</html>

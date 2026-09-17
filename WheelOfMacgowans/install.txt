@@ -1,0 +1,157 @@
+╔══════════════════════════════════════════════════════════════════╗
+║              WHEEL OF MACGOWANS — SETUP INSTRUCTIONS            ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Follow these steps on the HOME THEATER PC (HTPC) before playing.
+This only needs to be done once.
+
+──────────────────────────────────────────────────────────────────
+STEP 1 — INSTALL PYTHON
+──────────────────────────────────────────────────────────────────
+
+1. Open a browser and go to:  https://www.python.org/downloads/
+
+2. Click the big yellow "Download Python 3.x.x" button.
+
+3. Run the installer.
+   *** IMPORTANT: On the first screen of the installer, check the
+   box that says "Add Python to PATH" before clicking Install Now.
+   If you miss this, uninstall and reinstall with that box checked.
+
+4. When installation finishes, open a Command Prompt:
+   - Press Windows Key + R
+   - Type:  cmd
+   - Press Enter
+
+5. Verify Python installed correctly by typing:
+      python --version
+   You should see something like:  Python 3.12.x
+   If you see an error, Python did not install correctly — try again.
+
+
+──────────────────────────────────────────────────────────────────
+STEP 2 — INSTALL REQUIRED PACKAGES
+──────────────────────────────────────────────────────────────────
+
+In the same Command Prompt window, copy and paste this entire line
+and press Enter:
+
+    pip install flask flask-socketio requests beautifulsoup4 eventlet
+
+This downloads 5 packages the game needs. You'll see a lot of text
+scroll by — that's normal. Wait until you see a blinking cursor again.
+
+If you see "Successfully installed" at the end, you're good.
+
+
+──────────────────────────────────────────────────────────────────
+STEP 3 — BUILD THE PUZZLE DATABASE (run once, or to refresh)
+──────────────────────────────────────────────────────────────────
+
+This step downloads puzzles from the internet and saves them to
+a file called puzzles.csv. You need an internet connection for this.
+
+1. Open Command Prompt (Windows Key + R → cmd → Enter)
+
+2. Navigate to the game folder:
+      cd "D:\Programing Projects\WheelOfMacgowans"
+
+3. Run the scraper:
+      python scraper.py
+
+4. The scraper will work through all 43 seasons (takes 2-5 minutes).
+   Progress is shown as each season downloads.
+   When done, you'll see:  "Done! X puzzles saved to puzzles.csv"
+
+
+──────────────────────────────────────────────────────────────────
+STEP 4 — FIND YOUR LOCAL IP ADDRESS (for phones to connect)
+──────────────────────────────────────────────────────────────────
+
+Players connect their phones using your HTPC's local network address.
+
+1. Open Command Prompt (Windows Key + R → cmd → Enter)
+
+2. Type:
+      ipconfig
+
+3. Look for "IPv4 Address" under your Wi-Fi adapter.
+   It will look something like:  192.168.1.105
+
+   Write that number down — you'll give it to players so they can
+   type it into their phone browser.
+
+
+──────────────────────────────────────────────────────────────────
+STEP 5 — STARTING THE GAME
+──────────────────────────────────────────────────────────────────
+
+Every time you want to play:
+
+1. Open Command Prompt:  Windows Key + R → cmd → Enter
+
+2. Navigate to the game folder:
+      cd "D:\Programing Projects\WheelOfMacgowans"
+
+3. Start the server:
+      python server.py
+
+4. You'll see:  "Wheel of Macgowans running at http://0.0.0.0:5000"
+   Leave this window open the entire time you're playing.
+
+5. On the TV browser, open:
+      http://localhost:5000/board
+
+6. On each player's phone (all must be on the same Wi-Fi):
+      http://[YOUR-IP-ADDRESS]:5000/controller
+   Example:  http://192.168.1.105:5000/controller
+
+   Players type their name and hit Join. Once 3 players have joined,
+   the host clicks "Start Game" on the TV board.
+
+7. To stop the server when done, press Ctrl+C in the Command Prompt.
+
+
+──────────────────────────────────────────────────────────────────
+TROUBLESHOOTING
+──────────────────────────────────────────────────────────────────
+
+"python is not recognized as a command"
+  → Python was not added to PATH during install.
+    Uninstall Python and reinstall, checking "Add Python to PATH".
+
+"pip is not recognized as a command"
+  → Same fix as above.
+
+"No module named flask"
+  → Step 2 did not complete. Run the pip install line again.
+
+"Connection refused" on phone
+  → Make sure the HTPC and phone are on the same Wi-Fi network.
+    Check that you typed the correct IP address.
+    Make sure the server (python server.py) is still running.
+
+Phone shows the page but can't join
+  → Try refreshing the phone browser.
+    Make sure you have fewer than 3 players already joined.
+
+"puzzles.csv not found" when starting server
+  → You need to run Step 3 (python scraper.py) first.
+
+
+──────────────────────────────────────────────────────────────────
+QUICK REFERENCE — GAME CONTROLS
+──────────────────────────────────────────────────────────────────
+
+On phone controller:
+  • SPIN        — spin the wheel (your turn only)
+  • [A-Z]       — pick a consonant letter (grayed out if used)
+  • BUY VOWEL   — costs $250, then pick A/E/I/O/U
+  • SOLVE       — type your answer to solve the puzzle
+
+On TV board:
+  • Start Game  — begins the game (lobby screen)
+  • Next Round  — advances after a round is solved
+
+
+──────────────────────────────────────────────────────────────────

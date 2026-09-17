@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Solitaire</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none
+        }
+
+        body {
+            background: #008080;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 30px 10px;
+            min-height: 100vh;
+            font-family: 'MS Sans Serif', Arial, sans-serif;
+            overflow-x: auto
+        }
+
+        .win {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #fff #808080 #808080 #fff;
+            box-shadow: 2px 2px 0 #000;
+            display: inline-block;
+            min-width: 580px
+        }
+
+        .tbar {
+            background: linear-gradient(to right, #000080, #1084d0);
+            color: #fff;
+            font-weight: bold;
+            font-size: 13px;
+            padding: 3px 6px 3px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between
+        }
+
+        .tbtns {
+            display: flex;
+            gap: 2px
+        }
+
+        .tbtn {
+            width: 16px;
+            height: 14px;
+            background: #c0c0c0;
+            border: 1px solid;
+            border-color: #fff #808080 #808080 #fff;
+            font-size: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer
+        }
+
+        .tbtn:active {
+            border-color: #808080 #fff #fff #808080
+        }
+
+        .mbar {
+            background: #c0c0c0;
+            border-bottom: 1px solid #808080;
+            display: flex;
+            font-size: 13px;
+            position: relative
+        }
+
+        .mi {
+            padding: 2px 8px;
+            cursor: pointer
+        }
+
+        .mi:hover,
+        .mi.act {
+            background: #000080;
+            color: #fff
+        }
+
+        .dd {
+            display: none;
+            position: absolute;
+            top: 100%;
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #fff #808080 #808080 #fff;
+            box-shadow: 2px 2px 0 #000;
+            z-index: 1000;
+            min-width: 150px
+        }
+
+        .dd.open {
+            display: block
+        }
+
+        .ddi {
+            padding: 4px 20px 4px 24px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            position: relative
+        }
+
+        .ddi:hover {
+            background: #000080;
+            color: #fff
+        }
+
+        .ddi.chk::before {
+            content: '✓';
+            position: absolute;
+            left: 6px
+        }
+
+        .ddsep {
+            border-top: 1px solid #808080;
+            margin: 3px 0
+        }
+
+        .sbar {
+            background: #c0c0c0;
+            padding: 3px 10px;
+            display: flex;
+            gap: 24px;
+            font-size: 13px;
+            border-bottom: 1px solid #808080
+        }
+
+        .ga {
+            background: #167416;
+            padding: 10px;
+            min-width: 580px
+        }
+
+        .trow {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+            align-items: flex-start
+        }
+
+        .tabrow {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start
+        }
+
+        .gap {
+            flex: 1
+        }
+
+        .pile {
+            position: relative;
+            width: 72px;
+            min-height: 100px;
+            flex-shrink: 0
+        }
+
+        .empty-slot {
+            border: 2px dashed rgba(0, 60, 0, 0.6);
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.08)
+        }
+
+        .fsym {
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100px;
+            color: rgba(255, 255, 255, 0.15)
+        }
+
+        /* Cards */
+        .card {
+            width: 72px;
+            height: 100px;
+            border-radius: 5px;
+            border: 1px solid #888;
+            background: #fff;
+            position: absolute;
+            overflow: hidden;
+            box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);
+            cursor: pointer
+        }
+
+        .card.red {
+            color: #cc0000
+        }
+
+        .card.blk {
+            color: #000
+        }
+
+        .card.fd {
+            background: #3a5baa;
+            cursor: default
+        }
+
+        .card.fd::after {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 3px;
+            background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.08) 0, rgba(255, 255, 255, 0.08) 2px, transparent 2px, transparent 8px), repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.08) 0, rgba(255, 255, 255, 0.08) 2px, transparent 2px, transparent 8px)
+        }
+
+        .ctl {
+            position: absolute;
+            top: 3px;
+            left: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 1.15;
+            text-align: center
+        }
+
+        .cbr {
+            position: absolute;
+            bottom: 3px;
+            right: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 1.15;
+            text-align: center;
+            transform: rotate(180deg)
+        }
+
+        .ctr {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 34px;
+            line-height: 1
+        }
+
+        .dghst {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999
+        }
+
+        .dghst .card {
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5)
+        }
+
+        .droptgt {
+            outline: 2px solid rgba(255, 255, 200, 0.7);
+            border-radius: 6px
+        }
+
+        /* Overlay / dialog */
+        .ovl {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            z-index: 500;
+            align-items: center;
+            justify-content: center
+        }
+
+        .ovl.show {
+            display: flex
+        }
+
+        .dlg {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #fff #808080 #808080 #fff;
+            box-shadow: 4px 4px 0 #000;
+            min-width: 240px
+        }
+
+        .dlgt {
+            background: linear-gradient(to right, #000080, #1084d0);
+            color: #fff;
+            font-weight: bold;
+            font-size: 13px;
+            padding: 3px 8px
+        }
+
+        .dlgb {
+            padding: 18px 22px 14px;
+            font-size: 13px;
+            text-align: center;
+            line-height: 1.6
+        }
+
+        .dlgb p {
+            margin-bottom: 12px
+        }
+
+        .dbtn {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #fff #808080 #808080 #fff;
+            padding: 4px 18px;
+            font-size: 13px;
+            cursor: pointer;
+            margin: 0 4px
+        }
+
+        .dbtn:active {
+            border-color: #808080 #fff #fff #808080
+        }
+
+        /* Bounce layer */
+        #bl {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 4000;
+            overflow: hidden
+        }
+
+        .bc {
+            position: absolute;
+            width: 72px;
+            height: 100px;
+            border-radius: 5px;
+            border: 1px solid #888;
+            background: #fff;
+            overflow: hidden;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4)
+        }
+
+        .bc.red {
+            color: #cc0000
+        }
+
+        .bc.blk {
+            color: #000
+        }
+    </style>
+</head>
+
+<body>
+    <div class="win" id="app">
+        <div class="tbar">
+            <span>🃏 Solitaire</span>
+            <div class="tbtns">
+                <div class="tbtn">_</div>
+                <div class="tbtn">□</div>
+                <div class="tbtn">✕</div>
+            </div>
+        </div>
+        <div class="mbar" id="mbar">
+            <div class="mi" id="gmbtn">Game</div>
+            <div class="mi" id="hmbtn">Help</div>
+            <div class="dd" id="gdd">
+                <div class="ddi" id="ngItem">New Game &nbsp;<small>F2</small></div>
+                <div class="ddsep"></div>
+                <div class="ddi" id="undoItem">Undo</div>
+                <div class="ddsep"></div>
+                <div class="ddi chk" id="d1Item">Draw One</div>
+                <div class="ddi" id="d3Item">Draw Three</div>
+                <div class="ddsep"></div>
+                <div class="ddi" id="acItem">Auto Complete</div>
+            </div>
+            <div class="dd" id="hdd">
+                <div class="ddi" id="htpItem">How to Play</div>
+            </div>
+        </div>
+        <div class="sbar">
+            <span>Score: <b id="sv">0</b></span>
+            <span>Time: <b id="tv">0</b></span>
+            <span id="dmlbl">Draw 1</span>
+        </div>
+        <div class="ga" id="ga">
+            <div class="trow" id="tr">
+                <div class="pile" id="ps"></div>
+                <div class="pile" id="pw"></div>
+                <div class="gap"></div>
+                <div class="pile" id="pf0"></div>
+                <div class="pile" id="pf1"></div>
+                <div class="pile" id="pf2"></div>
+                <div class="pile" id="pf3"></div>
+            </div>
+            <div class="tabrow" id="tbr">
+                <div class="pile" id="pt0"></div>
+                <div class="pile" id="pt1"></div>
+                <div class="pile" id="pt2"></div>
+                <div class="pile" id="pt3"></div>
+                <div class="pile" id="pt4"></div>
+                <div class="pile" id="pt5"></div>
+                <div class="pile" id="pt6"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="bl"></div>
+
+    <div class="ovl" id="woOvl">
+        <div class="dlg">
+            <div class="dlgt">🎉 You Win!</div>
+            <div class="dlgb">
+                <p>Congratulations!<br>Score: <b id="fsc">0</b><br>Time: <b id="ftm">0</b>s</p>
+                <button class="dbtn" id="wng">New Game</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="ovl" id="htpOvl">
+        <div class="dlg">
+            <div class="dlgt">❓ How to Play</div>
+            <div class="dlgb" style="text-align:left;max-width:300px">
+                <p><b>Goal:</b> Move all cards to the 4 foundations (♠♥♦♣), Ace to King by suit.</p>
+                <p><b>Tableau:</b> Stack cards in alternating colors, descending rank. Only Kings go on empty columns.
+                </p>
+                <p><b>Stock:</b> Click to deal to waste. Click empty stock to redeal.</p>
+                <p><b>Double-click</b> any card to auto-send it to a foundation.</p>
+                <button class="dbtn" id="htpOk">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUITS = ['♠', '♥', '♦', '♣'];
+        const VALS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        const RANK = {}; VALS.forEach((v, i) => RANK[v] = i + 1);
+        const RED = new Set(['♥', '♦']);
+        const CW = 72, CH = 100, FDO = 17, FUO = 27;
+        let drawMode = 1, G = {}, drag = { active: false }, tmr = null;
+        let bounceCards = [], bounceRaf = null;
+
+        function shuffle(a) { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[b[i], b[j]] = [b[j], b[i]] } return b }
+
+        function newGame() {
+            clearInterval(tmr); stopBounce();
+            document.getElementById('woOvl').classList.remove('show');
+            G = { stock: [], waste: [], found: [[], [], [], []], tab: [[], [], [], [], [], [], []], score: 0, time: 0, resets: 0, won: false, hist: [] };
+            let deck = [];
+            for (const s of SUITS) for (const v of VALS) deck.push({ s, v, col: RED.has(s) ? 'red' : 'blk' });
+            deck = shuffle(deck);
+            let di = 0;
+            for (let c = 0; c < 7; c++)for (let r = 0; r <= c; r++)G.tab[c].push({ card: deck[di++], up: r === c });
+            G.stock = deck.slice(di).reverse();
+            document.getElementById('dmlbl').textContent = 'Draw ' + drawMode;
+            document.getElementById('sv').textContent = 0;
+            document.getElementById('tv').textContent = 0;
+            tmr = setInterval(() => { if (!G.won) { G.time++; document.getElementById('tv').textContent = G.time } }, 1000);
+            drag = { active: false };
+            render();
+        }
+
+        function save() { G.hist.push(JSON.stringify({ stock: G.stock, waste: G.waste, found: G.found, tab: G.tab, score: G.score, resets: G.resets })); if (G.hist.length > 30) G.hist.shift() }
+        function undo() { if (!G.hist.length) return; const p = JSON.parse(G.hist.pop()); G.stock = p.stock; G.waste = p.waste; G.found = p.found; G.tab = p.tab; G.score = Math.max(0, p.score - 2); G.resets = p.resets; render() }
+        function addSc(n) { G.score = Math.max(0, G.score + n); document.getElementById('sv').textContent = G.score }
+
+        /* ── Card element ── */
+        function mkCard(card, up, extra) {
+            const el = document.createElement('div');
+            el.className = 'card ' + (up ? card.col : 'fd') + (extra ? ' ' + extra : '');
+            if (up) {
+                el.innerHTML = `<div class="ctl">${card.v}<br>${card.s}</div><div class="ctr">${card.s}</div><div class="cbr">${card.v}<br>${card.s}</div>`;
+            }
+            return el;
+        }
+
+        /* ── Render ── */
+        function render() { renderStock(); renderWaste(); renderFound(); renderTab(); document.getElementById('sv').textContent = G.score }
+
+        function renderStock() {
+            const p = document.getElementById('ps'); p.innerHTML = ''; p.className = 'pile'; p.style.height = CH + 'px';
+            if (!G.stock.length) {
+                p.classList.add('empty-slot');
+                const lbl = document.createElement('div');
+                lbl.style.cssText = 'color:rgba(255,255,255,0.2);font-size:40px;display:flex;align-items:center;justify-content:center;height:100%';
+                lbl.textContent = '↺'; p.appendChild(lbl);
+            } else {
+                const el = mkCard(G.stock[G.stock.length - 1], false, 'stock-c');
+                el.style.top = el.style.left = '0px'; p.appendChild(el);
+            }
+            p.style.cursor = 'pointer'; p.onclick = onStock;
+        }
+
+        function renderWaste() {
+            const p = document.getElementById('pw'); p.innerHTML = ''; p.className = 'pile'; p.style.height = CH + 'px'; p.style.width = '72px';
+            if (!G.waste.length) { p.classList.add('empty-slot'); return }
+            if (drawMode === 1) {
+                const el = mkCard(G.waste[G.waste.length - 1], true); el.style.top = el.style.left = '0px'; p.appendChild(el);
+                bindCard(el, { type: 'waste', idx: G.waste.length - 1 });
+            } else {
+                const cnt = Math.min(G.waste.length, 3);
+                p.style.width = (CW + (cnt - 1) * 16) + 'px';
+                for (let i = 0; i < cnt; i++) {
+                    const card = G.waste[G.waste.length - cnt + i];
+                    const el = mkCard(card, true); el.style.top = '0px'; el.style.left = (i * 16) + 'px'; p.appendChild(el);
+                    if (i === cnt - 1) bindCard(el, { type: 'waste', idx: G.waste.length - 1 });
+                }
+            }
+        }
+
+        function renderFound() {
+            const FS = ['♠', '♥', '♦', '♣'];
+            FS.forEach((s, i) => {
+                const p = document.getElementById('pf' + i); p.innerHTML = ''; p.className = 'pile'; p.style.height = CH + 'px';
+                p.dataset.pt = 'f'; p.dataset.pi = i;
+                if (!G.found[i].length) {
+                    p.classList.add('empty-slot');
+                    const sym = document.createElement('div'); sym.className = 'fsym'; sym.textContent = s; p.appendChild(sym);
+                } else {
+                    const card = G.found[i][G.found[i].length - 1];
+                    const el = mkCard(card, true); el.style.top = el.style.left = '0px'; p.appendChild(el);
+                    bindCard(el, { type: 'found', idx: i });
+                }
+            });
+        }
+
+        function renderTab() {
+            for (let c = 0; c < 7; c++) {
+                const p = document.getElementById('pt' + c); p.innerHTML = ''; p.className = 'pile';
+                p.dataset.pt = 't'; p.dataset.pi = c;
+                const col = G.tab[c];
+                if (!col.length) { p.classList.add('empty-slot'); p.style.height = CH + 'px'; continue }
+                let h = 0; col.forEach((it, i) => { if (i < col.length - 1) h += it.up ? FUO : FDO }); h += CH;
+                p.style.height = h + 'px';
+                let top = 0;
+                col.forEach((it, i) => {
+                    const el = mkCard(it.card, it.up); el.style.top = top + 'px'; el.style.left = '0px'; p.appendChild(el);
+                    if (it.up) { bindCard(el, { type: 'tab', col: c, ri: i }); top += FUO }
+                    else { if (i === col.length - 1) { el.style.cursor = 'pointer'; el.onclick = () => flipTab(c) } top += FDO }
+                });
+            }
+        }
+
+        function flipTab(c) {
+            const col = G.tab[c], last = col[col.length - 1];
+            if (!last.up) { save(); last.up = true; addSc(5); render(); autoCheck() }
+        }
+
+        /* ── Drag & Drop ── */
+        function bindCard(el, src) {
+            el.addEventListener('mousedown', e => {
+                if (e.button !== 0) return; e.preventDefault();
+                let cards = [];
+                if (src.type === 'waste') cards = [G.waste[G.waste.length - 1]];
+                else if (src.type === 'found') cards = [G.found[src.idx][G.found[src.idx].length - 1]];
+                else if (src.type === 'tab') { const col = G.tab[src.col]; cards = col.slice(src.ri).filter(it => it.up).map(it => it.card) }
+                if (!cards.length) return;
+                drag.active = true; drag.cards = cards; drag.src = src;
+                const gh = document.createElement('div'); gh.className = 'dghst'; gh.style.cssText = 'position:fixed;z-index:9999;pointer-events:none';
+                cards.forEach((card, i) => { const ce = mkCard(card, true); ce.style.position = 'absolute'; ce.style.top = (i * FUO) + 'px'; ce.style.left = '0px'; gh.appendChild(ce) });
+                gh.style.width = CW + 'px'; gh.style.height = (CH + (cards.length - 1) * FUO) + 'px';
+                const rect = el.getBoundingClientRect(); drag.ox = e.clientX - rect.left; drag.oy = e.clientY - rect.top;
+                gh.style.left = (e.clientX - drag.ox) + 'px'; gh.style.top = (e.clientY - drag.oy) + 'px';
+                document.body.appendChild(gh); drag.el = gh;
+            });
+            el.addEventListener('dblclick', e => {
+                e.preventDefault();
+                let card;
+                if (src.type === 'waste') card = G.waste[G.waste.length - 1];
+                else if (src.type === 'tab') { const col = G.tab[src.col]; const it = col[src.ri]; if (!it.up || src.ri !== col.length - 1) return; card = it.card }
+                else return;
+                if (card) sendToFound(card, src);
+            });
+        }
+
+        document.addEventListener('mousemove', e => {
+            if (!drag.active || !drag.el) return;
+            drag.el.style.left = (e.clientX - drag.ox) + 'px'; drag.el.style.top = (e.clientY - drag.oy) + 'px';
+            document.querySelectorAll('.droptgt').forEach(el => el.classList.remove('droptgt'));
+            getDropTargets().forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('droptgt') });
+        });
+
+        document.addEventListener('mouseup', e => {
+            if (!drag.active) return;
+            let ok = false;
+            for (let i = 0; i < 4; i++) { const el = document.getElementById('pf' + i); if (el && over(el, e.clientX, e.clientY) && dropFound(i)) { ok = true; break } }
+            if (!ok) for (let c = 0; c < 7; c++) { const el = document.getElementById('pt' + c); if (el && over(el, e.clientX, e.clientY) && dropTab(c)) { ok = true; break } }
+            clearDrag(); if (ok) { render(); checkWin(); autoCheck() }
+        });
+
+        function over(el, x, y) { const r = el.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom }
+        function clearDrag() { if (drag.el) { drag.el.remove(); drag.el = null } drag.active = false; document.querySelectorAll('.droptgt').forEach(e => e.classList.remove('droptgt')) }
+
+        function getDropTargets() {
+            const t = []; if (!drag.cards || !drag.cards.length) return t;
+            if (drag.cards.length === 1) for (let i = 0; i < 4; i++)if (canFound(drag.cards[0], i)) t.push('pf' + i);
+            for (let c = 0; c < 7; c++)if (canTab(drag.cards[0], c)) t.push('pt' + c);
+            return t;
+        }
+
+        /* ── Rules ── */
+        function canFound(card, fi) { const f = G.found[fi]; if (!f.length) return RANK[card.v] === 1; const top = f[f.length - 1]; return top.s === card.s && RANK[card.v] === RANK[top.v] + 1 }
+        function canTab(card, c) { const col = G.tab[c]; if (!col.length) return RANK[card.v] === 13; const top = col[col.length - 1]; return top.up && top.card.col !== card.col && RANK[card.v] === RANK[top.card.v] - 1 }
+
+        function dropFound(fi) {
+            if (!drag.cards || drag.cards.length !== 1) return false;
+            const card = drag.cards[0]; if (!canFound(card, fi)) return false;
+            save(); removeFromSrc(drag.src); G.found[fi].push(card);
+            if (drag.src.type === 'waste') addSc(10); else if (drag.src.type === 'tab') addSc(10); else if (drag.src.type === 'found') { }
+            return true;
+        }
+
+        function dropTab(c) {
+            if (!drag.cards || !drag.cards.length) return false;
+            if (!canTab(drag.cards[0], c)) return false;
+            save(); removeFromSrc(drag.src);
+            drag.cards.forEach(card => G.tab[c].push({ card, up: true }));
+            if (drag.src.type === 'waste') addSc(5); else if (drag.src.type === 'found') addSc(-15);
+            return true;
+        }
+
+        function removeFromSrc(src) {
+            if (src.type === 'waste') G.waste.pop();
+            else if (src.type === 'found') G.found[src.idx].pop();
+            else if (src.type === 'tab') {
+                const col = G.tab[src.col]; col.splice(src.ri);
+                if (col.length && !col[col.length - 1].up) { col[col.length - 1].up = true; addSc(5) }
+            }
+        }
+
+        function sendToFound(card, src) {
+            for (let i = 0; i < 4; i++) {
+                if (canFound(card, i)) {
+                    save(); removeFromSrc(src); G.found[i].push(card);
+                    if (src.type === 'tab') addSc(10); else if (src.type === 'waste') addSc(10);
+                    render(); checkWin(); autoCheck(); return;
+                }
+            }
+        }
+
+        /* ── Stock click ── */
+        function onStock() {
+            if (G.won) return;
+            if (!G.stock.length) {
+                if (!G.waste.length) return;
+                save(); G.stock = G.waste.slice().reverse(); G.waste = []; G.resets++;
+                if (drawMode === 3 && G.resets > 1) addSc(-100);
+                render(); return;
+            }
+            save();
+            const cnt = drawMode === 1 ? 1 : Math.min(3, G.stock.length);
+            for (let i = 0; i < cnt; i++)G.waste.push(G.stock.pop());
+            render();
+        }
+
+        /* ── Auto-complete ── */
+        function autoCheck() {
+            if (G.stock.length || G.waste.length) return;
+            if (!G.tab.every(col => col.every(it => it.up))) return;
+            autoStep();
+        }
+        function autoStep() {
+            if (G.won) return; let moved = false;
+            const tryCard = (card, src) => { for (let i = 0; i < 4; i++) { if (canFound(card, i)) { removeFromSrc(src); G.found[i].push(card); addSc(10); moved = true; return true } } return false };
+            if (G.waste.length) tryCard(G.waste[G.waste.length - 1], { type: 'waste' });
+            if (!moved) for (let c = 0; c < 7; c++) {
+                const col = G.tab[c]; if (!col.length) continue;
+                const it = col[col.length - 1]; if (!it.up) continue;
+                if (tryCard(it.card, { type: 'tab', col: c, ri: col.length - 1 })) break;
+            }
+            if (moved) { render(); if (!checkWin()) setTimeout(autoStep, 80) }
+        }
+
+        /* ── Win ── */
+        function checkWin() {
+            if (G.found.reduce((s, f) => s + f.length, 0) !== 52) return false;
+            G.won = true; clearInterval(tmr);
+            const bonus = Math.max(0, 700 - G.time * 2); addSc(bonus);
+            document.getElementById('fsc').textContent = G.score;
+            document.getElementById('ftm').textContent = G.time;
+            startBounce();
+            setTimeout(() => document.getElementById('woOvl').classList.add('show'), 2500);
+            return true;
+        }
+
+        /* ── Bounce animation ── */
+        function startBounce() {
+            const layer = document.getElementById('bl'); layer.innerHTML = ''; bounceCards = [];
+            const pool = []; G.found.forEach(f => f.forEach(c => pool.push(c)));
+            for (let i = 0; i < 10; i++) {
+                const card = pool[Math.floor(Math.random() * pool.length)];
+                const el = document.createElement('div'); el.className = 'bc ' + card.col;
+                el.innerHTML = `<div class="ctl">${card.v}<br>${card.s}</div><div class="ctr">${card.s}</div>`;
+                const x = Math.random() * (window.innerWidth - CW), y = Math.random() * (window.innerHeight - CH);
+                el.style.left = x + 'px'; el.style.top = y + 'px'; layer.appendChild(el);
+                bounceCards.push({ el, x, y, vx: (Math.random() - 0.5) * 14, vy: -(Math.random() * 8 + 4) });
+            }
+            const G_ = 0.5;
+            function step() {
+                bounceCards.forEach(b => {
+                    b.vy += G_; b.x += b.vx; b.y += b.vy;
+                    const mx = window.innerWidth - CW, my = window.innerHeight - CH;
+                    if (b.x < 0) { b.x = 0; b.vx = Math.abs(b.vx) } if (b.x > mx) { b.x = mx; b.vx = -Math.abs(b.vx) }
+                    if (b.y < 0) { b.y = 0; b.vy = Math.abs(b.vy) * 0.8 } if (b.y > my) { b.y = my; b.vy = -Math.abs(b.vy) * 0.8 }
+                    b.el.style.left = b.x + 'px'; b.el.style.top = b.y + 'px';
+                });
+                bounceRaf = requestAnimationFrame(step);
+            }
+            bounceRaf = requestAnimationFrame(step);
+        }
+        function stopBounce() { if (bounceRaf) cancelAnimationFrame(bounceRaf); document.getElementById('bl').innerHTML = ''; bounceCards = [] }
+
+        /* ── Menus ── */
+        function closeMenus() { document.querySelectorAll('.dd').forEach(d => d.classList.remove('open')); document.querySelectorAll('.mi').forEach(m => m.classList.remove('act')) }
+        function openDD(ddId, btn) { const dd = document.getElementById(ddId); const open = dd.classList.contains('open'); closeMenus(); if (!open) { dd.classList.add('open'); btn.classList.add('act'); const br = btn.getBoundingClientRect(), mr = document.getElementById('mbar').getBoundingClientRect(); dd.style.left = (br.left - mr.left) + 'px' } }
+        document.getElementById('gmbtn').addEventListener('click', e => openDD('gdd', e.currentTarget));
+        document.getElementById('hmbtn').addEventListener('click', e => openDD('hdd', e.currentTarget));
+        document.addEventListener('click', e => { if (!e.target.closest('#mbar')) closeMenus() });
+        document.getElementById('ngItem').addEventListener('click', () => { closeMenus(); newGame() });
+        document.getElementById('undoItem').addEventListener('click', () => { closeMenus(); undo() });
+        document.getElementById('d1Item').addEventListener('click', () => { closeMenus(); drawMode = 1; document.getElementById('d1Item').classList.add('chk'); document.getElementById('d3Item').classList.remove('chk'); newGame() });
+        document.getElementById('d3Item').addEventListener('click', () => { closeMenus(); drawMode = 3; document.getElementById('d3Item').classList.add('chk'); document.getElementById('d1Item').classList.remove('chk'); newGame() });
+        document.getElementById('acItem').addEventListener('click', () => { closeMenus(); autoCheck() });
+        document.getElementById('htpItem').addEventListener('click', () => { closeMenus(); document.getElementById('htpOvl').classList.add('show') });
+        document.getElementById('wng').addEventListener('click', () => { stopBounce(); document.getElementById('woOvl').classList.remove('show'); newGame() });
+        document.getElementById('htpOk').addEventListener('click', () => document.getElementById('htpOvl').classList.remove('show'));
+        document.addEventListener('keydown', e => { if (e.key === 'F2') { stopBounce(); newGame() } if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo() } });
+
+        newGame();
+    </script>
+</body>
+
+</html>

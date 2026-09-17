@@ -1,0 +1,11 @@
+.env
+# Repo-wide .gitignore blocks .env.* (secrets); this is just a template.
+!.env.example
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+__pycache__/
+*.pyc
+.venv/
+venv/

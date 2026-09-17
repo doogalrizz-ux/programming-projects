@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+env/
+
+# Environment / secrets
+.env
+.env.*
+*.key
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite-journal
+
+# Cloudflare Workers (wrangler local cache/state — includes account info)
+.wrangler/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Logs
+*.log
+
+# Split out into its own repo (see datasorcerer/.git, remote: datasorcerer-site)
+datasorcerer/
+
+# Downloaded third-party project, own upstream repo, personal use only — never tracked here
+Atlantis/
+
+# Scratch: training notebooks, inspiration/reference files — never committed to any repo
+Sandbox/

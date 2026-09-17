@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Video Poker - Jacks or Better</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+    body {
+      background: #008080;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 30px 20px;
+      min-height: 100vh;
+      font-family: 'MS Sans Serif', Arial, sans-serif;
+    }
+
+    .window {
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #ffffff #808080 #808080 #ffffff;
+      box-shadow: 2px 2px 0 #000;
+      display: inline-block;
+      min-width: 620px;
+    }
+
+    .title-bar {
+      background: linear-gradient(to right, #000080, #1084d0);
+      color: #fff;
+      font-weight: bold;
+      font-size: 13px;
+      padding: 3px 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .title-bar-buttons button {
+      width: 16px; height: 14px;
+      font-size: 9px; line-height: 1;
+      background: #c0c0c0;
+      border: 1px solid;
+      border-color: #fff #808080 #808080 #fff;
+      cursor: default;
+    }
+
+    .content {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+
+    /* ── Pay Table ───────────────────────────────────────────────────── */
+    .paytable {
+      background: #000080;
+      border: 2px solid;
+      border-color: #808080 #fff #fff #808080;
+      padding: 6px 10px;
+      width: 100%;
+    }
+
+    .paytable table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .paytable th {
+      color: #ffff00;
+      text-align: left;
+      padding: 1px 4px;
+      font-weight: bold;
+      border-bottom: 1px solid #444;
+    }
+
+    .paytable th.bet-col {
+      text-align: right;
+      width: 40px;
+    }
+
+    .paytable td {
+      color: #ffffff;
+      padding: 1px 4px;
+      font-size: 12px;
+    }
+
+    .paytable td.bet-col {
+      text-align: right;
+      color: #ffff99;
+    }
+
+    .paytable tr.highlight td {
+      color: #000;
+      background: #ffff00;
+      font-weight: bold;
+    }
+
+    .paytable tr.royal-highlight td {
+      color: #000;
+      background: #ff8800;
+      font-weight: bold;
+    }
+
+    /* ── Status Panel ─────────────────────────────────────────────────── */
+    .status-panel {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .status-box {
+      background: #000;
+      border: 2px solid;
+      border-color: #808080 #fff #fff #808080;
+      color: #ff0000;
+      font-size: 18px;
+      font-weight: bold;
+      font-family: 'Courier New', monospace;
+      padding: 4px 10px;
+      min-width: 100px;
+      text-align: center;
+    }
+
+    .status-label {
+      font-size: 10px;
+      color: #000080;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 1px;
+    }
+
+    .status-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Win Message ─────────────────────────────────────────────────── */
+    .win-msg {
+      background: #000080;
+      border: 2px solid;
+      border-color: #808080 #fff #fff #808080;
+      color: #ffff00;
+      font-size: 15px;
+      font-weight: bold;
+      text-align: center;
+      padding: 4px 16px;
+      min-width: 200px;
+      min-height: 28px;
+      letter-spacing: 1px;
+    }
+
+    /* ── Cards ───────────────────────────────────────────────────────── */
+    .cards-area {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .card-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .hold-label {
+      font-size: 11px;
+      font-weight: bold;
+      color: #000080;
+      height: 16px;
+      visibility: hidden;
+    }
+
+    .hold-label.visible {
+      visibility: visible;
+    }
+
+    /* Giants colors: blue #0B2265, red #A71930 */
+    .card {
+      width: 90px;
+      height: 130px;
+      background: #fff;
+      border: 2px solid #0B2265;
+      border-radius: 6px;
+      box-shadow: 2px 3px 5px rgba(0,0,0,0.45), inset 0 0 0 3px #A71930;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 6px;
+      cursor: pointer;
+      position: relative;
+      font-family: 'Georgia', 'Times New Roman', serif;
+      transition: transform 0.1s;
+      overflow: hidden;
+    }
+
+    .card:hover:not(.face-down):not(.no-hover) {
+      transform: translateY(-4px);
+    }
+
+    .card.held {
+      border-color: #ffcc00;
+      box-shadow: 2px 3px 5px rgba(0,0,0,0.4), inset 0 0 0 3px #ffcc00, 0 0 10px #ffcc00;
+      background: #fffde0;
+      transform: translateY(-6px);
+    }
+
+    /* Card back — Giants blue with NY logo */
+    .card.face-down {
+      background: #0B2265;
+      cursor: default;
+      border-color: #0B2265;
+      box-shadow: 2px 3px 5px rgba(0,0,0,0.45), inset 0 0 0 4px #A71930;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-back-logo {
+      width: 50px;
+      height: 50px;
+      background: #fff;
+      border-radius: 50%;
+      border: 3px solid #A71930;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+      font-weight: bold;
+      color: #0B2265;
+      font-family: 'Georgia', 'Times New Roman', serif;
+      letter-spacing: -1px;
+    }
+
+    /* Card corners — larger serif labels */
+    .card-corner {
+      font-size: 16px;
+      font-weight: bold;
+      line-height: 1.1;
+    }
+
+    .card-corner.bottom {
+      align-self: flex-end;
+      transform: rotate(180deg);
+    }
+
+    /* Center pip for number cards */
+    .card-center {
+      font-size: 34px;
+      text-align: center;
+      line-height: 1;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Face card art panel (J / Q / K) */
+    .card-face-art {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0B2265;
+      margin: 2px 0;
+      border-radius: 3px;
+      border: 2px solid #A71930;
+      font-size: 28px;
+      font-weight: bold;
+      color: #fff;
+      line-height: 1.1;
+      text-align: center;
+    }
+
+    .card-face-art .face-suit {
+      font-size: 18px;
+      color: #ffcc00;
+    }
+
+    .red { color: #cc0000; }
+    .black { color: #000000; }
+
+    /* ── Buttons ─────────────────────────────────────────────────────── */
+    .controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #ffffff #808080 #808080 #ffffff;
+      font-family: 'MS Sans Serif', Arial, sans-serif;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 4px 14px;
+      cursor: pointer;
+      min-width: 80px;
+    }
+
+    .btn:active {
+      border-color: #808080 #ffffff #ffffff #808080;
+      padding: 5px 13px 3px 15px;
+    }
+
+    .btn:disabled {
+      color: #808080;
+      cursor: default;
+    }
+
+    .btn-deal {
+      background: #000080;
+      color: #ffffff;
+      font-size: 13px;
+      min-width: 100px;
+    }
+
+    .btn-deal:active {
+      background: #000060;
+    }
+
+    .btn-deal:disabled {
+      background: #606060;
+      color: #aaaaaa;
+    }
+
+    .bet-display {
+      background: #000;
+      color: #ff0000;
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      font-weight: bold;
+      border: 2px solid;
+      border-color: #808080 #fff #fff #808080;
+      padding: 3px 10px;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .separator {
+      background: #808080;
+      height: 2px;
+      width: 100%;
+      border-top: 1px solid #fff;
+    }
+  </style>
+</head>
+<body>
+<div class="window">
+  <div class="title-bar">
+    <span>Video Poker - Jacks or Better</span>
+    <div class="title-bar-buttons">
+      <button>_</button>
+      <button>&#9633;</button>
+      <button>&#x2715;</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Pay Table -->
+    <div class="paytable">
+      <table id="paytable">
+        <thead>
+          <tr>
+            <th>Hand</th>
+            <th class="bet-col">1</th>
+            <th class="bet-col">2</th>
+            <th class="bet-col">3</th>
+            <th class="bet-col">4</th>
+            <th class="bet-col">5</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr data-hand="Royal Flush">
+            <td>Royal Flush</td>
+            <td class="bet-col">250</td>
+            <td class="bet-col">500</td>
+            <td class="bet-col">750</td>
+            <td class="bet-col">1000</td>
+            <td class="bet-col">4000</td>
+          </tr>
+          <tr data-hand="Straight Flush">
+            <td>Straight Flush</td>
+            <td class="bet-col">50</td>
+            <td class="bet-col">100</td>
+            <td class="bet-col">150</td>
+            <td class="bet-col">200</td>
+            <td class="bet-col">250</td>
+          </tr>
+          <tr data-hand="Four of a Kind">
+            <td>Four of a Kind</td>
+            <td class="bet-col">25</td>
+            <td class="bet-col">50</td>
+            <td class="bet-col">75</td>
+            <td class="bet-col">100</td>
+            <td class="bet-col">125</td>
+          </tr>
+          <tr data-hand="Full House">
+            <td>Full House</td>
+            <td class="bet-col">9</td>
+            <td class="bet-col">18</td>
+            <td class="bet-col">27</td>
+            <td class="bet-col">36</td>
+            <td class="bet-col">45</td>
+          </tr>
+          <tr data-hand="Flush">
+            <td>Flush</td>
+            <td class="bet-col">6</td>
+            <td class="bet-col">12</td>
+            <td class="bet-col">18</td>
+            <td class="bet-col">24</td>
+            <td class="bet-col">30</td>
+          </tr>
+          <tr data-hand="Straight">
+            <td>Straight</td>
+            <td class="bet-col">4</td>
+            <td class="bet-col">8</td>
+            <td class="bet-col">12</td>
+            <td class="bet-col">16</td>
+            <td class="bet-col">20</td>
+          </tr>
+          <tr data-hand="Three of a Kind">
+            <td>Three of a Kind</td>
+            <td class="bet-col">3</td>
+            <td class="bet-col">6</td>
+            <td class="bet-col">9</td>
+            <td class="bet-col">12</td>
+            <td class="bet-col">15</td>
+          </tr>
+          <tr data-hand="Two Pair">
+            <td>Two Pair</td>
+            <td class="bet-col">2</td>
+            <td class="bet-col">4</td>
+            <td class="bet-col">6</td>
+            <td class="bet-col">8</td>
+            <td class="bet-col">10</td>
+          </tr>
+          <tr data-hand="Jacks or Better">
+            <td>Jacks or Better</td>
+            <td class="bet-col">1</td>
+            <td class="bet-col">2</td>
+            <td class="bet-col">3</td>
+            <td class="bet-col">4</td>
+            <td class="bet-col">5</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Status -->
+    <div class="status-panel">
+      <div class="status-group">
+        <div class="status-box" id="credits-display">100</div>
+        <div class="status-label">CREDITS</div>
+      </div>
+      <div class="win-msg" id="win-msg">INSERT COIN TO PLAY</div>
+      <div class="status-group">
+        <div class="status-box" id="win-display">0</div>
+        <div class="status-label">WIN</div>
+      </div>
+    </div>
+
+    <div class="separator"></div>
+
+    <!-- Cards -->
+    <div class="cards-area" id="cards-area">
+      <div class="card-wrapper" id="wrap-0">
+        <div class="hold-label" id="hold-label-0">HELD</div>
+        <div class="card face-down no-hover" id="card-0"><div class="card-back-logo">NY</div></div>
+      </div>
+      <div class="card-wrapper" id="wrap-1">
+        <div class="hold-label" id="hold-label-1">HELD</div>
+        <div class="card face-down no-hover" id="card-1"><div class="card-back-logo">NY</div></div>
+      </div>
+      <div class="card-wrapper" id="wrap-2">
+        <div class="hold-label" id="hold-label-2">HELD</div>
+        <div class="card face-down no-hover" id="card-2"><div class="card-back-logo">NY</div></div>
+      </div>
+      <div class="card-wrapper" id="wrap-3">
+        <div class="hold-label" id="hold-label-3">HELD</div>
+        <div class="card face-down no-hover" id="card-3"><div class="card-back-logo">NY</div></div>
+      </div>
+      <div class="card-wrapper" id="wrap-4">
+        <div class="hold-label" id="hold-label-4">HELD</div>
+        <div class="card face-down no-hover" id="card-4"><div class="card-back-logo">NY</div></div>
+      </div>
+    </div>
+
+    <div class="separator"></div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="btn" id="btn-bet-minus" onclick="changeBet(-1)">Bet -</button>
+      <div class="bet-display" id="bet-display">1</div>
+      <button class="btn" id="btn-bet-plus" onclick="changeBet(1)">Bet +</button>
+      <button class="btn btn-deal" id="btn-deal" onclick="dealOrDraw()">DEAL</button>
+      <button class="btn" id="btn-max-bet" onclick="maxBet()">Max Bet</button>
+      <button class="btn" id="btn-refill" onclick="refill()">Refill +20</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────
+  let credits = 100;
+  let bet = 1;
+  let phase = 'idle'; // idle | dealt | over
+  let deck = [];
+  let hand = [];
+  let held = [false, false, false, false, false];
+
+  const SUITS = ['♠', '♥', '♦', '♣'];
+  const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+  const RED_SUITS = new Set(['♥', '♦']);
+
+  const HAND_NAMES = [
+    'Royal Flush', 'Straight Flush', 'Four of a Kind', 'Full House',
+    'Flush', 'Straight', 'Three of a Kind', 'Two Pair', 'Jacks or Better'
+  ];
+  const PAYS = [250, 50, 25, 9, 6, 4, 3, 2, 1];
+
+  // ── Deck ───────────────────────────────────────────────────────────────
+  function buildDeck() {
+    const d = [];
+    for (const suit of SUITS)
+      for (const rank of RANKS)
+        d.push({ suit, rank, value: RANKS.indexOf(rank) });
+    return d;
+  }
+
+  function shuffle(d) {
+    for (let i = d.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [d[i], d[j]] = [d[j], d[i]];
+    }
+    return d;
+  }
+
+  // ── Hand Evaluation ────────────────────────────────────────────────────
+  function evaluate(cards) {
+    const values = cards.map(c => c.value).sort((a, b) => a - b);
+    const suits = cards.map(c => c.suit);
+    const rankCounts = {};
+    for (const v of values) rankCounts[v] = (rankCounts[v] || 0) + 1;
+    const counts = Object.values(rankCounts).sort((a, b) => b - a);
+    const isFlush = suits.every(s => s === suits[0]);
+    const isStr8 = counts[0] === 1 && (values[4] - values[0] === 4);
+    const isWheel = counts[0] === 1 &&
+      values[4] === 12 && values[0] === 0 && values[1] === 1 &&
+      values[2] === 2 && values[3] === 3;
+    const straight = isStr8 || isWheel;
+    const isRoyal = isFlush && values[0] === 8 && values[4] === 12 &&
+      values[1] === 9 && values[2] === 10 && values[3] === 11;
+
+    if (isRoyal)             return 0;
+    if (isFlush && straight) return 1;
+    if (counts[0] === 4)     return 2;
+    if (counts[0] === 3 && counts[1] === 2) return 3;
+    if (isFlush)             return 4;
+    if (straight)            return 5;
+    if (counts[0] === 3)     return 6;
+    if (counts[0] === 2 && counts[1] === 2) return 7;
+    if (counts[0] === 2) {
+      const pairValue = parseInt(Object.keys(rankCounts).find(k => rankCounts[k] === 2));
+      if (pairValue >= 9) return 8;
+    }
+    return -1;
+  }
+
+  function calcPayout(handIndex) {
+    if (handIndex < 0) return 0;
+    if (handIndex === 0 && bet === 5) return 4000;
+    return PAYS[handIndex] * bet;
+  }
+
+  // ── Rendering ──────────────────────────────────────────────────────────
+  function renderCard(idx, card, faceDown) {
+    const el = document.getElementById('card-' + idx);
+    el.className = 'card';
+    if (faceDown) {
+      el.className += ' face-down no-hover';
+      el.innerHTML = '<div class="card-back-logo">NY</div>';
+      return;
+    }
+    if (held[idx]) el.className += ' held';
+    const col = RED_SUITS.has(card.suit) ? 'red' : 'black';
+    const isFace = ['J', 'Q', 'K'].includes(card.rank);
+    const isAce = card.rank === 'A';
+
+    let center;
+    if (isFace) {
+      center = `<div class="card-face-art"><span>${card.rank}</span><span class="face-suit">${card.suit}</span></div>`;
+    } else if (isAce) {
+      center = `<div class="card-center ${col}" style="font-size:46px">${card.suit}</div>`;
+    } else {
+      center = `<div class="card-center ${col}">${card.suit}</div>`;
+    }
+
+    el.innerHTML = `
+      <div class="card-corner ${col}">${card.rank}<br>${card.suit}</div>
+      ${center}
+      <div class="card-corner bottom ${col}">${card.rank}<br>${card.suit}</div>
+    `;
+  }
+
+  function renderHoldLabel(idx) {
+    const lbl = document.getElementById('hold-label-' + idx);
+    lbl.className = 'hold-label' + (held[idx] ? ' visible' : '');
+  }
+
+  function renderAll(faceDown) {
+    for (let i = 0; i < 5; i++) {
+      renderCard(i, hand[i], faceDown || !hand[i]);
+      renderHoldLabel(i);
+    }
+  }
+
+  function updateDisplays() {
+    document.getElementById('credits-display').textContent = credits;
+    document.getElementById('bet-display').textContent = bet;
+  }
+
+  function setWinMsg(msg) {
+    document.getElementById('win-msg').textContent = msg;
+  }
+
+  function setWinDisplay(amt) {
+    document.getElementById('win-display').textContent = amt;
+  }
+
+  function highlightPaytable(handIndex) {
+    document.querySelectorAll('#paytable tbody tr').forEach(tr => {
+      tr.classList.remove('highlight', 'royal-highlight');
+    });
+    if (handIndex < 0) return;
+    const rows = document.querySelectorAll('#paytable tbody tr');
+    if (handIndex === 0) {
+      rows[0].classList.add('royal-highlight');
+    } else {
+      rows[handIndex].classList.add('highlight');
+    }
+  }
+
+  function highlightBetColumn() {
+    document.querySelectorAll('#paytable th.bet-col, #paytable td.bet-col').forEach(el => {
+      el.style.fontWeight = '';
+      el.style.textDecoration = '';
+    });
+    const colIndex = bet;
+    document.querySelectorAll(`#paytable tr th:nth-child(${colIndex + 1}), #paytable tr td:nth-child(${colIndex + 1})`).forEach(el => {
+      el.style.fontWeight = 'bold';
+      el.style.textDecoration = 'underline';
+    });
+  }
+
+  function setButtonStates() {
+    const dealing = phase === 'dealt';
+    document.getElementById('btn-bet-minus').disabled = dealing || bet <= 1;
+    document.getElementById('btn-bet-plus').disabled = dealing || bet >= 5;
+    document.getElementById('btn-max-bet').disabled = dealing;
+    document.getElementById('btn-deal').disabled = credits < bet && phase !== 'dealt';
+    document.getElementById('btn-refill').disabled = dealing;
+  }
+
+  // ── Toggle Hold ────────────────────────────────────────────────────────
+  function toggleHold(idx) {
+    if (phase !== 'dealt') return;
+    held[idx] = !held[idx];
+    renderCard(idx, hand[idx], false);
+    renderHoldLabel(idx);
+  }
+
+  for (let i = 0; i < 5; i++) {
+    (function(idx) {
+      document.getElementById('card-' + idx).addEventListener('click', () => toggleHold(idx));
+    })(i);
+  }
+
+  // ── Bet Controls ───────────────────────────────────────────────────────
+  function changeBet(delta) {
+    if (phase === 'dealt') return;
+    bet = Math.min(5, Math.max(1, bet + delta));
+    updateDisplays();
+    highlightBetColumn();
+    setButtonStates();
+  }
+
+  function maxBet() {
+    if (phase === 'dealt') return;
+    bet = 5;
+    updateDisplays();
+    highlightBetColumn();
+    setButtonStates();
+    if (phase !== 'dealt') dealOrDraw();
+  }
+
+  function refill() {
+    if (phase === 'dealt') return;
+    credits += 20;
+    updateDisplays();
+    setButtonStates();
+  }
+
+  // ── Deal / Draw ────────────────────────────────────────────────────────
+  function dealOrDraw() {
+    if (phase === 'idle' || phase === 'over') {
+      startDeal();
+    } else if (phase === 'dealt') {
+      draw();
+    }
+  }
+
+  function startDeal() {
+    if (credits < bet) {
+      setWinMsg('NOT ENOUGH CREDITS');
+      return;
+    }
+    credits -= bet;
+    updateDisplays();
+    setWinDisplay(0);
+    highlightPaytable(-1);
+    setWinMsg('CHOOSE CARDS TO HOLD');
+
+    deck = shuffle(buildDeck());
+    hand = deck.splice(0, 5);
+    held = [false, false, false, false, false];
+    phase = 'dealt';
+
+    renderAll(false);
+    setButtonStates();
+  }
+
+  function draw() {
+    for (let i = 0; i < 5; i++) {
+      if (!held[i]) hand[i] = deck.pop();
+    }
+    phase = 'over';
+    held = [false, false, false, false, false];
+
+    renderAll(false);
+
+    const result = evaluate(hand);
+    const payout = calcPayout(result);
+
+    if (payout > 0) {
+      credits += payout;
+      setWinDisplay(payout);
+      const msg = result === 0 && bet === 5
+        ? '*** ROYAL FLUSH! 4000 CREDITS! ***'
+        : `${HAND_NAMES[result]}!  +${payout}`;
+      setWinMsg(msg);
+      highlightPaytable(result);
+    } else {
+      setWinMsg('No win. Deal again?');
+      setWinDisplay(0);
+      highlightPaytable(-1);
+    }
+
+    updateDisplays();
+    setButtonStates();
+    if (credits === 0 && payout === 0) {
+      setTimeout(() => setWinMsg('OUT OF CREDITS — Press Refill!'), 800);
+    }
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────
+  updateDisplays();
+  highlightBetColumn();
+  setButtonStates();
+</script>
+</body>
+</html>

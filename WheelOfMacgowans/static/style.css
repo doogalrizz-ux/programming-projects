@@ -1,0 +1,33 @@
+/* Wheel of Macgowans — Shared Styles */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: 'Georgia', serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  cursor: pointer;
+  font-family: 'Georgia', serif;
+  border: none;
+  outline: none;
+  touch-action: manipulation;
+}
+
+input {
+  font-family: 'Georgia', serif;
+  outline: none;
+}
+
+/* Prevent text selection on tap */
+button, .letter-btn {
+  user-select: none;
+  -webkit-user-select: none;
+}

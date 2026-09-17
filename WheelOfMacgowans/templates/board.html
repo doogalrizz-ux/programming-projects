@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wheel of Macgowans</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    /* Board-specific styles */
+    body { background: #0a0020; overflow: hidden; }
+
+    #title-bar {
+      text-align: center;
+      font-family: 'Georgia', serif;
+      font-size: 2.6rem;
+      font-weight: bold;
+      color: #FFD700;
+      text-shadow: 0 0 20px #FFD700, 2px 2px 0 #8B0000;
+      letter-spacing: 4px;
+      padding: 10px 0 4px;
+    }
+
+    /* Main game board — centered column */
+    #game-board {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    /* Puzzle board outer frame — cyan neon border */
+    #puzzle-board-outer {
+      background: #000a1a;
+      border: 8px solid #00d4ff;
+      box-shadow:
+        0 0 18px #00d4ff,
+        0 0 40px #00d4ff66,
+        0 0 70px #00d4ff22,
+        inset 0 0 24px #001833;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin: 6px auto;
+      display: inline-block;
+    }
+
+    /* Puzzle board grid */
+    #puzzle-area {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .puzzle-row {
+      display: flex;
+      gap: 4px;
+    }
+
+    /* Base tile size */
+    .letter-tile {
+      width: 70px;
+      height: 82px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      font-weight: bold;
+      font-family: 'Georgia', serif;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    /* Green filler / space square */
+    .letter-tile.green {
+      background: linear-gradient(160deg, #33cc55 0%, #1da83a 60%, #178030 100%);
+      border-top: 3px solid #55ee77;
+      border-left: 3px solid #44dd66;
+      border-bottom: 3px solid #0e5520;
+      border-right: 3px solid #116622;
+      box-shadow: inset 0 2px 4px #55ff7744;
+    }
+
+    /* Blank tile — letter not yet revealed */
+    .letter-tile.blank {
+      background: linear-gradient(160deg, #f8f2e0 0%, #ede4c8 100%);
+      border-top: 4px solid #fffaea;
+      border-left: 4px solid #fffaea;
+      border-bottom: 4px solid #a89060;
+      border-right: 4px solid #a89060;
+      box-shadow: 2px 2px 6px #00000066;
+    }
+
+    /* Revealed letter tile */
+    .letter-tile.revealed {
+      background: linear-gradient(160deg, #ffffff 0%, #f0f0ee 100%);
+      border-top: 4px solid #ffffff;
+      border-left: 4px solid #ffffff;
+      border-bottom: 4px solid #aaaaaa;
+      border-right: 4px solid #aaaaaa;
+      color: #00186e;
+      box-shadow: 2px 2px 6px #00000066;
+      animation: tile-reveal 0.25s ease-out;
+    }
+
+    @keyframes tile-reveal {
+      from { transform: scaleX(0); }
+      to   { transform: scaleX(1); }
+    }
+
+    /* Category / date bar */
+    #category-bar {
+      text-align: center;
+      margin: 4px 0;
+    }
+    #category-label {
+      font-size: 1.5rem;
+      color: #FFD700;
+      font-family: 'Georgia', serif;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+    #air-date-label {
+      font-size: 1rem;
+      color: #aabbff;
+      margin-left: 20px;
+      font-style: italic;
+    }
+
+    /* Round indicator */
+    #round-label {
+      text-align: center;
+      color: #cc99ff;
+      font-size: 1.1rem;
+      margin-bottom: 2px;
+    }
+
+    /* Scoreboard */
+    #scoreboard {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin: 8px 0;
+    }
+    .score-card {
+      background: rgba(0,0,40,0.85);
+      border: 2px solid #334;
+      border-radius: 10px;
+      padding: 10px 22px;
+      min-width: 180px;
+      text-align: center;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .score-card.active {
+      border-color: #FFD700;
+      box-shadow: 0 0 18px #FFD700aa;
+    }
+    .score-name {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #fff;
+      font-family: 'Georgia', serif;
+    }
+    .score-round {
+      font-size: 1rem;
+      color: #aaffaa;
+    }
+    .score-banked {
+      font-size: 1.3rem;
+      color: #FFD700;
+      font-weight: bold;
+    }
+    .score-label { font-size: 0.75rem; color: #778; }
+
+    /* Spin value display */
+    #spin-value {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: bold;
+      color: #fff;
+      min-height: 48px;
+      margin: 4px 0;
+      font-family: 'Georgia', serif;
+      text-shadow: 0 0 10px currentColor;
+      transition: color 0.3s;
+    }
+    #spin-value.bankrupt { color: #ff4444; }
+    #spin-value.lose-turn { color: #ff9900; }
+    #spin-value.dollar { color: #44ff88; }
+
+    /* Wheel area — shown only during spin */
+    #wheel-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #0a0020;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    #wheel-screen.visible { display: flex; }
+    #wheel-title {
+      font-family: 'Georgia', serif;
+      font-size: 2.2rem;
+      color: #FFD700;
+      text-shadow: 0 0 20px #FFD700;
+      letter-spacing: 4px;
+      margin-bottom: 20px;
+    }
+    #wheel-canvas {
+      border-radius: 50%;
+      box-shadow: 0 0 40px #FFD70088, 0 0 80px #FFD70044;
+    }
+    #wheel-spinner-name {
+      font-size: 1.6rem;
+      color: #fff;
+      margin-top: 20px;
+      font-family: 'Georgia', serif;
+    }
+
+    /* Lobby overlay */
+    #lobby-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #0a0020;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 90;
+    }
+    #lobby-screen.visible { display: flex; }
+    #lobby-title {
+      font-family: 'Georgia', serif;
+      font-size: 3.5rem;
+      color: #FFD700;
+      text-shadow: 0 0 30px #FFD700, 2px 2px 0 #8B0000;
+      letter-spacing: 6px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    #lobby-players {
+      display: flex;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+    .lobby-slot {
+      width: 200px;
+      height: 100px;
+      border: 2px dashed #446;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #556;
+      font-size: 1.1rem;
+      font-family: 'Georgia', serif;
+      transition: all 0.3s;
+    }
+    .lobby-slot.filled {
+      border-color: #FFD700;
+      color: #FFD700;
+      font-size: 1.4rem;
+      font-weight: bold;
+      box-shadow: 0 0 14px #FFD70066;
+    }
+    #lobby-instructions {
+      color: #aabbff;
+      font-size: 1.1rem;
+      text-align: center;
+      line-height: 2;
+    }
+    #lobby-url {
+      font-size: 1.3rem;
+      color: #fff;
+      font-weight: bold;
+      background: #001a6b;
+      padding: 8px 24px;
+      border-radius: 8px;
+      letter-spacing: 2px;
+      margin: 10px 0;
+    }
+    #lobby-qr {
+      background: #fff;
+      display: inline-block;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      box-shadow: 0 0 30px #FFD70066;
+    }
+
+    /* Round end overlay */
+    #round-end-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,10,0.92);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 95;
+    }
+    #round-end-screen.visible { display: flex; }
+    #round-end-title {
+      font-family: 'Georgia', serif;
+      font-size: 3rem;
+      color: #FFD700;
+      text-shadow: 0 0 30px #FFD700;
+      margin-bottom: 16px;
+    }
+    #round-end-puzzle {
+      font-size: 1.8rem;
+      color: #fff;
+      margin-bottom: 10px;
+      font-family: 'Georgia', serif;
+      letter-spacing: 3px;
+    }
+    #round-end-solver {
+      font-size: 1.4rem;
+      color: #aaffaa;
+      margin-bottom: 30px;
+    }
+    #round-end-scores {
+      display: flex;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+    #next-round-btn {
+      font-size: 1.3rem;
+      padding: 14px 40px;
+      background: #FFD700;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      font-family: 'Georgia', serif;
+    }
+    #next-round-btn:hover { background: #ffec6e; }
+
+    /* Game over */
+    #gameover-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #0a0020;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 99;
+    }
+    #gameover-screen.visible { display: flex; }
+    #gameover-title {
+      font-family: 'Georgia', serif;
+      font-size: 4rem;
+      color: #FFD700;
+      text-shadow: 0 0 40px #FFD700;
+      margin-bottom: 30px;
+    }
+    #gameover-scores { display: flex; gap: 30px; margin-bottom: 40px; }
+    #gameover-winner {
+      font-size: 2rem;
+      color: #aaffaa;
+      font-family: 'Georgia', serif;
+      margin-bottom: 30px;
+    }
+    #play-again-btn {
+      font-size: 1.2rem;
+      padding: 12px 36px;
+      background: #FFD700;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    /* Used letters */
+    #used-letters {
+      text-align: center;
+      color: #556;
+      font-size: 1.1rem;
+      letter-spacing: 4px;
+      font-family: monospace;
+      margin: 4px 0;
+    }
+    #used-letters span.used { color: #ff6666; }
+
+    /* Kill button */
+    #kill-btn {
+      position: fixed;
+      bottom: 12px;
+      left: 12px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #880000;
+      color: #fff;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      opacity: 0.45;
+      z-index: 999;
+      transition: opacity 0.2s;
+      line-height: 34px;
+      text-align: center;
+      padding: 0;
+    }
+    #kill-btn:hover { opacity: 0.9; background: #cc0000; }
+
+    /* Announcement banner */
+    #announcement {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,40,0.95);
+      border: 3px solid #FFD700;
+      border-radius: 16px;
+      padding: 20px 50px;
+      font-size: 2.5rem;
+      font-family: 'Georgia', serif;
+      color: #FFD700;
+      text-shadow: 0 0 20px #FFD700;
+      z-index: 200;
+      display: none;
+      text-align: center;
+      box-shadow: 0 0 60px #FFD70066;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ LOBBY SCREEN ══════════════════════════════════════════════ -->
+<div id="lobby-screen" class="visible">
+  <div id="lobby-title">🎡 Wheel of Macgowans 🎡</div>
+  <div id="lobby-players">
+    <div class="lobby-slot" id="lobby-slot-0">Waiting...</div>
+    <div class="lobby-slot" id="lobby-slot-1">Waiting...</div>
+    <div class="lobby-slot" id="lobby-slot-2">Waiting...</div>
+  </div>
+  <div id="lobby-instructions">
+    Scan the QR code or type the address into your phone's browser:<br><br>
+    <div id="lobby-qr"></div>
+    <div id="lobby-url">{{ controller_url }}</div>
+    then type your name and tap <strong>Join</strong>
+    <br><br>
+    <span style="color:#556;">Game starts automatically when 3 players join</span>
+  </div>
+</div>
+
+<!-- ══ WHEEL SPIN SCREEN ═════════════════════════════════════════ -->
+<div id="wheel-screen">
+  <div id="wheel-title">Wheel of Macgowans</div>
+  <div style="position:relative; display:inline-block;">
+    <canvas id="wheel-canvas" width="540" height="540"></canvas>
+    <!-- Pointer -->
+    <div style="position:absolute; top:-18px; left:50%; transform:translateX(-50%);
+                width:0; height:0; border-left:18px solid transparent;
+                border-right:18px solid transparent; border-top:34px solid #FFD700;
+                filter:drop-shadow(0 0 8px #FFD700);"></div>
+  </div>
+  <div id="wheel-spinner-name"></div>
+</div>
+
+<!-- ══ MAIN GAME BOARD ═══════════════════════════════════════════ -->
+<div id="game-board">
+  <div id="title-bar">🎡 Wheel of Macgowans 🎡</div>
+  <div id="round-label">Round 1 of 5</div>
+
+  <div id="category-bar">
+    <span id="category-label">CATEGORY</span>
+    <span id="air-date-label">Originally aired: —</span>
+  </div>
+
+  <div id="puzzle-board-outer">
+    <div id="puzzle-area"></div>
+  </div>
+
+  <div id="used-letters"></div>
+
+  <div id="spin-value">Spin the wheel!</div>
+
+  <div id="scoreboard"></div>
+</div>
+
+<!-- ══ ROUND END SCREEN ══════════════════════════════════════════ -->
+<div id="round-end-screen">
+  <div id="round-end-title">Round Complete!</div>
+  <div id="round-end-puzzle"></div>
+  <div id="round-end-solver"></div>
+  <div id="round-end-scores"></div>
+</div>
+
+<!-- ══ GAME OVER SCREEN ══════════════════════════════════════════ -->
+<div id="gameover-screen">
+  <div id="gameover-title">Game Over!</div>
+  <div id="gameover-winner"></div>
+  <div id="gameover-scores"></div>
+  <button id="play-again-btn" onclick="resetGame()">Play Again</button>
+</div>
+
+<!-- ══ KILL BUTTON ════════════════════════════════════════════════ -->
+<button id="kill-btn" title="Stop server" onclick="if(confirm('Stop the server?')){fetch('/shutdown',{method:'POST'}).catch(()=>{})}">✕</button>
+
+<!-- ══ ANNOUNCEMENT BANNER ═══════════════════════════════════════ -->
+<div id="announcement"></div>
+
+<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  // Generate QR code for the controller URL
+  const controllerUrl = "{{ controller_url }}";
+  new QRCode(document.getElementById("lobby-qr"), {
+    text: controllerUrl,
+    width: 200,
+    height: 200,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M,
+  });
+</script>
+<script src="/static/board.js"></script>
+</body>
+</html>
