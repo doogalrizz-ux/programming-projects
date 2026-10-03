@@ -8,6 +8,7 @@ Phones:    http://<your-local-ip>:5000/controller
 """
 
 import os
+import secrets
 import socket
 import threading
 import webbrowser
@@ -17,10 +18,14 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from game import Game, Phase, MAX_PLAYERS
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "wheel-of-macgowans-secret"
-socketio = SocketIO(app, async_mode="eventlet", cors_allowed_origins="*")
+app.config["SECRET_KEY"] = os.environ.get("WHEEL_SECRET_KEY") or secrets.token_hex(32)
+socketio = SocketIO(app, async_mode="eventlet")  # same-origin only (pages load from this server)
 
 game = Game()
+
+# Per-run token the board's kill button must send; only handed to the host machine
+SHUTDOWN_TOKEN = secrets.token_urlsafe(32)
+LOCALHOST_ADDRS = ("127.0.0.1", "::1")
 
 BOARD_ROOM = "board"
 CTRL_ROOM  = "controllers"
@@ -36,7 +41,9 @@ def index():
 def board():
     local_ip = get_local_ip()
     controller_url = f"http://{local_ip}:5000/controller"
-    return render_template("board.html", controller_url=controller_url)
+    is_host = request.remote_addr in LOCALHOST_ADDRS
+    return render_template("board.html", controller_url=controller_url,
+                           shutdown_token=SHUTDOWN_TOKEN if is_host else "")
 
 @app.route("/controller")
 def controller():
@@ -44,7 +51,12 @@ def controller():
 
 @app.route("/shutdown", methods=["POST"])
 def shutdown():
-    """Emergency stop — called by the kill button on the board page."""
+    """Emergency stop — called by the kill button on the board page (host machine only)."""
+    if request.remote_addr not in LOCALHOST_ADDRS:
+        return "Can only stop the server from the host computer.", 403
+    token = request.headers.get("X-Shutdown-Token", "")
+    if not secrets.compare_digest(token, SHUTDOWN_TOKEN):
+        return "Invalid shutdown token.", 403
     threading.Timer(0.3, lambda: os._exit(0)).start()
     return "Stopping..."
 

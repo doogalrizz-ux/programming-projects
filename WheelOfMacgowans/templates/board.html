@@ -500,7 +500,20 @@
 </div>
 
 <!-- ══ KILL BUTTON ════════════════════════════════════════════════ -->
-<button id="kill-btn" title="Stop server" onclick="if(confirm('Stop the server?')){fetch('/shutdown',{method:'POST'}).catch(()=>{})}">✕</button>
+<button id="kill-btn" title="Stop server" onclick="stopServer()">✕</button>
+<script>
+  const shutdownToken = {{ shutdown_token|tojson }};
+  function stopServer() {
+    if (!shutdownToken) {
+      alert('Can only stop the server from the host computer.');
+      return;
+    }
+    if (!confirm('Stop the server?')) return;
+    fetch('/shutdown', { method: 'POST', headers: { 'X-Shutdown-Token': shutdownToken } })
+      .then(r => { if (r.status === 403) alert('Can only stop the server from the host computer.'); })
+      .catch(() => {});  // connection drops as the server exits
+  }
+</script>
 
 <!-- ══ ANNOUNCEMENT BANNER ═══════════════════════════════════════ -->
 <div id="announcement"></div>
