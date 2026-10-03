@@ -56,7 +56,7 @@ detail.
 ## Setup
 
 ```powershell
-cd "D:\Programing Projects\homeghost-mcp"
+cd path\to\homeghost-mcp
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt

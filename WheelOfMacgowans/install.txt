@@ -54,7 +54,7 @@ a file called puzzles.csv. You need an internet connection for this.
 1. Open Command Prompt (Windows Key + R → cmd → Enter)
 
 2. Navigate to the game folder:
-      cd "D:\Programing Projects\WheelOfMacgowans"
+      cd path\to\WheelOfMacgowans
 
 3. Run the scraper:
       python scraper.py
@@ -91,7 +91,7 @@ Every time you want to play:
 1. Open Command Prompt:  Windows Key + R → cmd → Enter
 
 2. Navigate to the game folder:
-      cd "D:\Programing Projects\WheelOfMacgowans"
+      cd path\to\WheelOfMacgowans
 
 3. Start the server:
       python server.py

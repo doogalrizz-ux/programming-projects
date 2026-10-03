@@ -5,7 +5,7 @@ Set GEMINI_API_KEY as a one-off environment variable in your own
 terminal instead (never paste a real key into chat with an assistant).
 
 Usage (PowerShell):
-    cd "D:\\Programing Projects\\HomeGhost"
+    cd path\\to\\HomeGhost
     .venv\\Scripts\\activate
     $env:GEMINI_API_KEY = "paste-your-real-key-here"
     python test_gemini_connection.py
